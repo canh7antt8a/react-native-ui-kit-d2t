@@ -215,6 +215,8 @@ export default class KeyboardInputViewScreen extends PureComponent {
           revealKeyboardInteractive
           onRequestShowKeyboard={this.onRequestShowKeyboard}
           useSafeArea={useSafeArea}
+          addBottomView={true}
+          bottomViewColor='#0000FF'
         />
       </View>
     );

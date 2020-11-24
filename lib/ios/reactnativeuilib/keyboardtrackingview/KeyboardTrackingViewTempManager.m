@@ -50,6 +50,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
 @property (nonatomic) CGFloat originalHeight;
 @property (nonatomic) KeyboardTrackingScrollBehavior scrollBehavior;
 @property (nonatomic) BOOL addBottomView;
+@property (nonatomic) NSString* bottomViewColor;
 @property (nonatomic) BOOL useSafeArea;
 @property (nonatomic) BOOL scrollToFocusedInput;
 @property (nonatomic) BOOL allowHitsOutsideBounds;
@@ -81,6 +82,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
         _bottomViewHeight = kBottomViewHeightTemp;
         
         self.addBottomView = NO;
+        self.bottomViewColor = nil;
         self.scrollToFocusedInput = NO;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(rctContentDidAppearNotification:) name:RCTContentDidAppearNotification object:nil];
@@ -268,6 +270,15 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     [self addBottomViewIfNecessary];
 }
 
+-(UIColor *)colorFromHexString:(NSString *)hexString
+{
+    unsigned rgbValue = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hexString];
+    [scanner setScanLocation:1]; // bypass '#' character
+    [scanner scanHexInt:&rgbValue];
+    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:1.0];
+}
+
 - (void)setupTextView:(UITextView*)textView
 {
     if (textView != nil)
@@ -449,7 +460,15 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     if (self.addBottomView && _bottomView == nil)
     {
         _bottomView = [UIView new];
-        _bottomView.backgroundColor = [UIColor whiteColor];
+        // _bottomView.backgroundColor = [UIColor whiteColor];
+        if (self.bottomViewColor)
+        {
+            _bottomView.backgroundColor = [self colorFromHexString:self.bottomViewColor];
+        }
+        else
+        {
+            _bottomView.backgroundColor = [UIColor whiteColor];
+        }
         [self addSubview:_bottomView];
         [self updateBottomViewFrame];
     }
@@ -633,6 +652,7 @@ RCT_REMAP_VIEW_PROPERTY(revealKeyboardInteractive, revealKeyboardInteractive, BO
 RCT_REMAP_VIEW_PROPERTY(manageScrollView, manageScrollView, BOOL)
 RCT_REMAP_VIEW_PROPERTY(requiresSameParentToManageScrollView, requiresSameParentToManageScrollView, BOOL)
 RCT_REMAP_VIEW_PROPERTY(addBottomView, addBottomView, BOOL)
+RCT_REMAP_VIEW_PROPERTY(bottomViewColor, bottomViewColor, NSString)
 RCT_REMAP_VIEW_PROPERTY(useSafeArea, useSafeArea, BOOL)
 RCT_REMAP_VIEW_PROPERTY(scrollToFocusedInput, scrollToFocusedInput, BOOL)
 RCT_REMAP_VIEW_PROPERTY(allowHitsOutsideBounds, allowHitsOutsideBounds, BOOL)
