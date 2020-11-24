@@ -174,6 +174,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     
     for (UIView* subview in allSubviews)
     {
+        NSString* className = NSStringFromClass([subview class]);
         if(_manageScrollView)
         {
             if(_scrollViewToManage == nil)
@@ -199,7 +200,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
             }
         }
         
-        if ([subview isKindOfClass:NSClassFromString(@"RCTTextField")])
+        if ([className isEqualToString:@"RCTTextField"])
         {
             UITextField *textField = nil;
             Ivar backedTextInputIvar = class_getInstanceVariable([subview class], "_backedTextInput");
@@ -213,15 +214,15 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
             }
             [self setupTextField:textField];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTUITextField")] && [subview isKindOfClass:[UITextField class]])
+        else if ([className isEqualToString:@"RCTUITextField"])
         {
             [self setupTextField:(UITextField*)subview];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTMultilineTextInputView")])
+        else if ([className isEqualToString:@"RCTMultilineTextInputView"])
         {
             [self setupTextView:[subview valueForKey:@"_backedTextInputView"]];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTTextView")])
+        else if ([className isEqualToString:@"RCTTextView"])
         {
             UITextView *textView = nil;
             Ivar backedTextInputIvar = class_getInstanceVariable([subview class], "_backedTextInput");
@@ -235,7 +236,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
             }
             [self setupTextView:textView];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTUITextView")] && [subview isKindOfClass:[UITextView class]])
+        else if ([className isEqualToString:@"RCTUITextView"])
         {
             [self setupTextView:(UITextView*)subview];
         }
@@ -268,6 +269,13 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     _originalHeight = _ObservingInputAccessoryViewTemp.height;
     
     [self addBottomViewIfNecessary];
+}
+
+- (void)resetTracking
+{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self deferedInitializeAccessoryViewsAndHandleInsets];
+    });
 }
 
 -(UIColor *)colorFromHexString:(NSString *)hexString
@@ -707,6 +715,21 @@ RCT_EXPORT_METHOD(scrollToStart:(nonnull NSNumber *)reactTag)
          }
          
          [view scrollToStart];
+     }];
+}
+
+RCT_EXPORT_METHOD(resetTracking:(nonnull NSNumber *)reactTag)
+{
+    [self.bridge.uiManager addUIBlock:
+     ^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, KeyboardTrackingViewTemp *> *viewRegistry) {
+         
+         KeyboardTrackingViewTemp *view = viewRegistry[reactTag];
+         if (!view || ![view isKindOfClass:[KeyboardTrackingViewTemp class]]) {
+             RCTLogError(@"Error: cannot find KeyboardTrackingViewTemp with tag #%@", reactTag);
+             return;
+         }
+         
+         [view resetTracking];
      }];
 }
 
