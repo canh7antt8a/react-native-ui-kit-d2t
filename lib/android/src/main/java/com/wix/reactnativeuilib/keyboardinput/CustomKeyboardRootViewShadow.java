@@ -14,11 +14,10 @@ public class CustomKeyboardRootViewShadow extends LayoutShadowNode {
         mLayout.setShadowNode(this);
     }
 
-    // I'm not sure we really need to change this :(
-    // @Override
-    // public void onBeforeLayout(NativeViewHierarchyOptimizer nativeViewHierarchyOptimizer) {
-    //     mLayout.setShadowNode(this);
-    // }
+    @Override
+    public void onBeforeLayout(NativeViewHierarchyOptimizer nativeViewHierarchyOptimizer) {
+        mLayout.setShadowNode(this);
+    }
 
     public void setHeight(int heightPx) {
         setStyleHeight(heightPx);
