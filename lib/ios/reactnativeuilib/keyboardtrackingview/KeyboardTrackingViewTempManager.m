@@ -50,6 +50,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
 @property (nonatomic) CGFloat originalHeight;
 @property (nonatomic) KeyboardTrackingScrollBehavior scrollBehavior;
 @property (nonatomic) BOOL addBottomView;
+@property (nonatomic) NSString* bottomViewColor;
 @property (nonatomic) BOOL useSafeArea;
 @property (nonatomic) BOOL scrollToFocusedInput;
 @property (nonatomic) BOOL allowHitsOutsideBounds;
@@ -81,6 +82,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
         _bottomViewHeight = kBottomViewHeightTemp;
         
         self.addBottomView = NO;
+        self.bottomViewColor = nil;
         self.scrollToFocusedInput = NO;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(rctContentDidAppearNotification:) name:RCTContentDidAppearNotification object:nil];
@@ -172,6 +174,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     
     for (UIView* subview in allSubviews)
     {
+        NSString* className = NSStringFromClass([subview class]);
         if(_manageScrollView)
         {
             if(_scrollViewToManage == nil)
@@ -197,7 +200,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
             }
         }
         
-        if ([subview isKindOfClass:NSClassFromString(@"RCTTextField")])
+        if ([className isEqualToString:@"RCTTextField"])
         {
             UITextField *textField = nil;
             Ivar backedTextInputIvar = class_getInstanceVariable([subview class], "_backedTextInput");
@@ -211,15 +214,15 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
             }
             [self setupTextField:textField];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTUITextField")] && [subview isKindOfClass:[UITextField class]])
+        else if ([className isEqualToString:@"RCTUITextField"])
         {
             [self setupTextField:(UITextField*)subview];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTMultilineTextInputView")])
+        else if ([className isEqualToString:@"RCTMultilineTextInputView"])
         {
             [self setupTextView:[subview valueForKey:@"_backedTextInputView"]];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTTextView")])
+        else if ([className isEqualToString:@"RCTTextView"])
         {
             UITextView *textView = nil;
             Ivar backedTextInputIvar = class_getInstanceVariable([subview class], "_backedTextInput");
@@ -233,7 +236,7 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
             }
             [self setupTextView:textView];
         }
-        else if ([subview isKindOfClass:NSClassFromString(@"RCTUITextView")] && [subview isKindOfClass:[UITextView class]])
+        else if ([className isEqualToString:@"RCTUITextView"])
         {
             [self setupTextView:(UITextView*)subview];
         }
@@ -266,6 +269,22 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     _originalHeight = _ObservingInputAccessoryViewTemp.height;
     
     [self addBottomViewIfNecessary];
+}
+
+- (void)resetTracking
+{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self deferedInitializeAccessoryViewsAndHandleInsets];
+    });
+}
+
+-(UIColor *)colorFromHexString:(NSString *)hexString
+{
+    unsigned rgbValue = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hexString];
+    [scanner setScanLocation:1]; // bypass '#' character
+    [scanner scanHexInt:&rgbValue];
+    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:1.0];
 }
 
 - (void)setupTextView:(UITextView*)textView
@@ -449,7 +468,15 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     if (self.addBottomView && _bottomView == nil)
     {
         _bottomView = [UIView new];
-        _bottomView.backgroundColor = [UIColor whiteColor];
+        // _bottomView.backgroundColor = [UIColor whiteColor];
+        if (self.bottomViewColor)
+        {
+            _bottomView.backgroundColor = [self colorFromHexString:self.bottomViewColor];
+        }
+        else
+        {
+            _bottomView.backgroundColor = [UIColor whiteColor];
+        }
         [self addSubview:_bottomView];
         [self updateBottomViewFrame];
     }
@@ -633,6 +660,7 @@ RCT_REMAP_VIEW_PROPERTY(revealKeyboardInteractive, revealKeyboardInteractive, BO
 RCT_REMAP_VIEW_PROPERTY(manageScrollView, manageScrollView, BOOL)
 RCT_REMAP_VIEW_PROPERTY(requiresSameParentToManageScrollView, requiresSameParentToManageScrollView, BOOL)
 RCT_REMAP_VIEW_PROPERTY(addBottomView, addBottomView, BOOL)
+RCT_REMAP_VIEW_PROPERTY(bottomViewColor, bottomViewColor, NSString)
 RCT_REMAP_VIEW_PROPERTY(useSafeArea, useSafeArea, BOOL)
 RCT_REMAP_VIEW_PROPERTY(scrollToFocusedInput, scrollToFocusedInput, BOOL)
 RCT_REMAP_VIEW_PROPERTY(allowHitsOutsideBounds, allowHitsOutsideBounds, BOOL)
@@ -687,6 +715,21 @@ RCT_EXPORT_METHOD(scrollToStart:(nonnull NSNumber *)reactTag)
          }
          
          [view scrollToStart];
+     }];
+}
+
+RCT_EXPORT_METHOD(resetTracking:(nonnull NSNumber *)reactTag)
+{
+    [self.bridge.uiManager addUIBlock:
+     ^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, KeyboardTrackingViewTemp *> *viewRegistry) {
+         
+         KeyboardTrackingViewTemp *view = viewRegistry[reactTag];
+         if (!view || ![view isKindOfClass:[KeyboardTrackingViewTemp class]]) {
+             RCTLogError(@"Error: cannot find KeyboardTrackingViewTemp with tag #%@", reactTag);
+             return;
+         }
+         
+         [view resetTracking];
      }];
 }
 
