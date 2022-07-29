@@ -142,6 +142,16 @@ RCT_EXPORT_METHOD(presentCustomInputComponent:(nonnull NSNumber*)inputFieldTag p
     
     BOOL useSafeArea = [self shouldUseSafeAreaFrom:params];
     RCTCustomKeyboardViewControllerTemp* customKeyboardController = [[RCTCustomKeyboardViewControllerTemp alloc] initWithUsingSafeArea:useSafeArea];
+    if(params[@"bottomViewColor"] != nil)
+    {
+        UIColor *safeAreaBackgroundColor = [RCTConvert UIColor:params[@"bottomViewColor"]];
+        if(safeAreaBackgroundColor != nil)
+        {
+            customKeyboardController.safeAreaBackgroundColor = safeAreaBackgroundColor;
+			// Using the same background from safe area view to root view
+            rv.backgroundColor = safeAreaBackgroundColor;
+        }
+    }
     customKeyboardController.rootView = rv;
     
     _WXInputHelperViewTemp* helperView = [[_WXInputHelperViewTemp alloc] initWithFrame:CGRectZero];

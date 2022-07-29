@@ -57,6 +57,15 @@
     }
 }
 
+-(void)setSafeAreaBackgroundColor:(UIColor *)safeAreaBackgroundColor
+{
+    _safeAreaBackgroundColor = safeAreaBackgroundColor;
+
+    if (self.safeAreaBackgroundColor && _safeAreaBackgroundColor != nil) {
+       self.view.backgroundColor = _safeAreaBackgroundColor;
+    }
+}
+
 -(void)setRootView:(RCTRootView*)rootView
 {
     if(_rootView != nil)

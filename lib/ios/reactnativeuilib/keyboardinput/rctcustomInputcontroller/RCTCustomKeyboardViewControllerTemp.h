@@ -20,5 +20,6 @@
 
 @property (nonatomic, strong) NSLayoutConstraint *heightConstraint;
 @property (nonatomic, strong) RCTRootView *rootView;
+@property (nonatomic, strong) UIColor *safeAreaBackgroundColor;
 
 @end
