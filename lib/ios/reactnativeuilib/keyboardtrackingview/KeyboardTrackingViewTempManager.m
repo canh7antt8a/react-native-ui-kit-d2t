@@ -457,6 +457,14 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
 
 #pragma mark - bottom view
 
+-(void)updateBottomView:(NSString*)bottomViewColor
+{
+    if (bottomViewColor && self.addBottomView && _bottomView != nil)
+    {
+        _bottomView.backgroundColor = [self colorFromHexString:bottomViewColor];
+    }
+}
+
 -(void)setAddBottomView:(BOOL)addBottomView
 {
     _addBottomView = addBottomView;
@@ -730,6 +738,21 @@ RCT_EXPORT_METHOD(resetTracking:(nonnull NSNumber *)reactTag)
          }
          
          [view resetTracking];
+     }];
+}
+
+RCT_EXPORT_METHOD(updateBottomView:(nonnull NSNumber *)reactTag color:(nonnull NSString*)bottomViewColor)
+{
+    [self.bridge.uiManager addUIBlock:
+     ^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, KeyboardTrackingViewTemp *> *viewRegistry) {
+         
+         KeyboardTrackingViewTemp *view = viewRegistry[reactTag];
+         if (!view || ![view isKindOfClass:[KeyboardTrackingViewTemp class]]) {
+             RCTLogError(@"Error: cannot find KeyboardTrackingViewTemp with tag #%@", reactTag);
+             return;
+         }
+         
+         [view updateBottomView:bottomViewColor];
      }];
 }
 
